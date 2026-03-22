@@ -7,7 +7,7 @@ import time
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
 
 from app.ai import (
     DEFAULT_CONNECTIVITY_PROMPT,
@@ -18,7 +18,9 @@ from app.ai import (
 )
 from app.database import (
     get_board_for_user,
+    get_chat_history_for_user,
     initialize_database,
+    save_ai_chat_interaction_for_user,
     save_board_for_user,
 )
 
@@ -64,6 +66,15 @@ class BoardPayload(BaseModel):
 
 class AIConnectivityPayload(BaseModel):
     prompt: str = Field(default=DEFAULT_CONNECTIVITY_PROMPT, min_length=1)
+
+
+class AIChatRequestPayload(BaseModel):
+    message: str = Field(min_length=1)
+
+
+class AIChatStructuredResponse(BaseModel):
+    assistantMessage: str = Field(min_length=1)
+    board: BoardPayload | None = None
 
 
 SESSION_STORE: dict[str, SessionRecord] = {}
@@ -114,6 +125,25 @@ def require_authenticated_user(request: Request) -> str:
 
 def get_openai_service() -> OpenAIService:
     return OpenAIService(model=DEFAULT_OPENAI_MODEL)
+
+
+def _parse_ai_chat_response(raw_output: str) -> AIChatStructuredResponse:
+    try:
+        return AIChatStructuredResponse.model_validate_json(raw_output)
+    except ValidationError as exc:
+        raise OpenAIRequestError("OpenAI response schema validation failed.") from exc
+
+
+def _validate_ai_board_update(chat_response: AIChatStructuredResponse) -> dict | None:
+    if chat_response.board is None:
+        return None
+
+    try:
+        return _validate_board_payload(chat_response.board)
+    except HTTPException as exc:
+        raise OpenAIRequestError(
+            f"OpenAI response board validation failed: {exc.detail}"
+        ) from exc
 
 
 def _validate_board_payload(board: BoardPayload) -> dict:
@@ -239,6 +269,45 @@ def create_app(frontend_dir: Path | None = None, db_path: Path | None = None) ->
             raise HTTPException(status_code=502, detail=str(exc)) from exc
 
         return {"model": service.model, "output": output}
+
+    @app.post("/api/ai/chat")
+    def ai_chat(
+        payload: AIChatRequestPayload,
+        username: str = Depends(require_authenticated_user),
+    ) -> dict:
+        current_board = get_board_for_user(app.state.db_path, username)
+        history = get_chat_history_for_user(app.state.db_path, username)
+        schema = AIChatStructuredResponse.model_json_schema()
+
+        try:
+            service = get_openai_service()
+        except OpenAIConfigurationError as exc:
+            raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+        try:
+            raw_output = service.chat_with_board(
+                board=current_board,
+                user_prompt=payload.message,
+                history=history,
+                response_schema=schema,
+            )
+            parsed = _parse_ai_chat_response(raw_output)
+            board_update = _validate_ai_board_update(parsed)
+            persisted_board = save_ai_chat_interaction_for_user(
+                app.state.db_path,
+                username=username,
+                user_prompt=payload.message,
+                assistant_message=parsed.assistantMessage,
+                board_update=board_update,
+            )
+        except OpenAIRequestError as exc:
+            raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+        return {
+            "assistantMessage": parsed.assistantMessage,
+            "boardUpdated": board_update is not None,
+            "board": persisted_board if board_update is not None else None,
+        }
 
     app.mount(
         "/",

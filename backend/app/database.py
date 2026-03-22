@@ -90,16 +90,21 @@ def _ensure_user_and_board(connection: sqlite3.Connection, username: str) -> int
     return user_id
 
 
+def _get_board_row(connection: sqlite3.Connection, user_id: int) -> sqlite3.Row:
+    row = connection.execute(
+        "SELECT id, board_json FROM boards WHERE user_id = ?",
+        (user_id,),
+    ).fetchone()
+    if not row:
+        raise RuntimeError("Board was not found after initialization.")
+    return row
+
+
 def get_board_for_user(db_path: Path, username: str) -> dict:
     with _connect(db_path) as connection:
         user_id = _ensure_user_and_board(connection, username)
-        row = connection.execute(
-            "SELECT board_json FROM boards WHERE user_id = ?",
-            (user_id,),
-        ).fetchone()
-        if not row:
-            raise RuntimeError("Board was not found after initialization.")
-        return json.loads(str(row["board_json"]))
+        board_row = _get_board_row(connection, user_id)
+        return json.loads(str(board_row["board_json"]))
 
 
 def save_board_for_user(db_path: Path, username: str, board: dict) -> dict:
@@ -115,3 +120,77 @@ def save_board_for_user(db_path: Path, username: str, board: dict) -> dict:
         )
         connection.commit()
     return board
+
+
+def get_chat_history_for_user(db_path: Path, username: str, limit: int = 50) -> list[dict[str, str]]:
+    if limit <= 0:
+        return []
+
+    with _connect(db_path) as connection:
+        user_id = _ensure_user_and_board(connection, username)
+        board_row = _get_board_row(connection, user_id)
+        rows = connection.execute(
+            """
+            SELECT role, content
+            FROM chat_messages
+            WHERE user_id = ? AND board_id = ?
+            ORDER BY id DESC
+            LIMIT ?
+            """,
+            (user_id, int(board_row["id"]), limit),
+        ).fetchall()
+
+    ordered_rows = reversed(rows)
+    return [
+        {"role": str(row["role"]), "content": str(row["content"])}
+        for row in ordered_rows
+    ]
+
+
+def save_ai_chat_interaction_for_user(
+    db_path: Path,
+    username: str,
+    user_prompt: str,
+    assistant_message: str,
+    board_update: dict | None,
+) -> dict:
+    with _connect(db_path) as connection:
+        user_id = _ensure_user_and_board(connection, username)
+        board_row = _get_board_row(connection, user_id)
+        board_id = int(board_row["id"])
+
+        connection.execute(
+            """
+            INSERT INTO chat_messages(user_id, board_id, role, content, metadata_json)
+            VALUES (?, ?, 'user', ?, NULL)
+            """,
+            (user_id, board_id, user_prompt),
+        )
+        connection.execute(
+            """
+            INSERT INTO chat_messages(user_id, board_id, role, content, metadata_json)
+            VALUES (?, ?, 'assistant', ?, ?)
+            """,
+            (
+                user_id,
+                board_id,
+                assistant_message,
+                json.dumps({"boardUpdated": board_update is not None}),
+            ),
+        )
+
+        if board_update is not None:
+            connection.execute(
+                """
+                UPDATE boards
+                SET board_json = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+                WHERE id = ?
+                """,
+                (json.dumps(board_update), board_id),
+            )
+            resolved_board = board_update
+        else:
+            resolved_board = json.loads(str(board_row["board_json"]))
+
+        connection.commit()
+    return resolved_board

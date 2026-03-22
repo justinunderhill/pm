@@ -3,7 +3,9 @@ from pathlib import Path
 
 from app.database import (
     get_board_for_user,
+    get_chat_history_for_user,
     initialize_database,
+    save_ai_chat_interaction_for_user,
     save_board_for_user,
 )
 
@@ -44,3 +46,27 @@ def test_save_and_get_board_roundtrip(db_path: Path) -> None:
 
     assert loaded["columns"][0]["title"] == "Updated Backlog"
     assert loaded["cards"]["card-1"]["title"] == "Renamed Card"
+
+
+def test_save_ai_chat_interaction_persists_messages_and_board_update(db_path: Path) -> None:
+    initialize_database(db_path, seed_username="user")
+    board = get_board_for_user(db_path, "user")
+    board["columns"][0]["title"] = "AI Updated"
+
+    persisted_board = save_ai_chat_interaction_for_user(
+        db_path,
+        username="user",
+        user_prompt="Please reprioritize",
+        assistant_message="Done. I renamed the column.",
+        board_update=board,
+    )
+
+    history = get_chat_history_for_user(db_path, "user")
+    loaded = get_board_for_user(db_path, "user")
+
+    assert persisted_board["columns"][0]["title"] == "AI Updated"
+    assert loaded["columns"][0]["title"] == "AI Updated"
+    assert history == [
+        {"role": "user", "content": "Please reprioritize"},
+        {"role": "assistant", "content": "Done. I renamed the column."},
+    ]

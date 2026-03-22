@@ -1,4 +1,5 @@
 import os
+import json
 from typing import Any
 
 from openai import OpenAI
@@ -53,6 +54,45 @@ class OpenAIService:
             response = self._client.responses.create(
                 model=self.model,
                 input=prompt,
+            )
+        except Exception as exc:  # pragma: no cover - details depend on SDK internals
+            raise OpenAIRequestError("OpenAI request failed.") from exc
+
+        text_output = _extract_output_text(response)
+        if not text_output:
+            raise OpenAIRequestError("OpenAI response did not include text output.")
+        return text_output
+
+    def chat_with_board(
+        self,
+        board: dict,
+        user_prompt: str,
+        history: list[dict[str, str]],
+        response_schema: dict[str, Any],
+    ) -> str:
+        payload = {
+            "board": board,
+            "history": history,
+            "userPrompt": user_prompt,
+        }
+        instruction = (
+            "You are the assistant for a project management Kanban board. "
+            "Respond with exactly one JSON object that matches the provided JSON schema. "
+            "Do not include markdown, code fences, or explanatory text outside JSON. "
+            "Set board to null when no board update is needed."
+        )
+        composed_input = "\n\n".join(
+            [
+                instruction,
+                f"Response JSON schema:\n{json.dumps(response_schema)}",
+                f"Request context JSON:\n{json.dumps(payload)}",
+            ]
+        )
+
+        try:
+            response = self._client.responses.create(
+                model=self.model,
+                input=composed_input,
             )
         except Exception as exc:  # pragma: no cover - details depend on SDK internals
             raise OpenAIRequestError("OpenAI request failed.") from exc

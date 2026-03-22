@@ -9,10 +9,11 @@
 - `/api/auth/me` is a protected route used to verify route protection.
 - `/api/board` (`GET`, `PUT`) provides authenticated board load/save with payload validation.
 - `/api/ai/connectivity` (`POST`) provides an authenticated OpenAI connectivity check.
+- `/api/ai/chat` (`POST`) provides authenticated structured AI responses with optional board updates.
 - SQLite data layer:
-- `backend/app/database.py` handles schema initialization, seeding, and board persistence.
+- `backend/app/database.py` handles schema initialization, board persistence, and chat history persistence.
 - `backend/app/board_seed.py` provides default board seed JSON.
-- `backend/app/ai.py` handles OpenAI client wiring and connectivity calls.
+- `backend/app/ai.py` handles OpenAI client wiring, connectivity calls, and board-aware chat calls.
 - Dependency/project config: `backend/pyproject.toml` with lockfile `backend/uv.lock`.
 - Unit/integration tests:
 - `backend/tests/test_app.py`
@@ -21,3 +22,5 @@
 - `backend/tests/test_board_api.py`
 - `backend/tests/test_ai.py`
 - `backend/tests/test_ai_api.py`
+- `backend/tests/test_ai_chat_logic.py`
+- `backend/tests/test_ai_chat_api.py`

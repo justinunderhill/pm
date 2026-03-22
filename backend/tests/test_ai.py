@@ -70,3 +70,22 @@ def test_connectivity_check_raises_when_no_text_is_returned() -> None:
 
     with pytest.raises(OpenAIRequestError, match="did not include text output"):
         service.connectivity_check("2+2")
+
+
+def test_chat_with_board_sends_prompt_board_history_and_schema() -> None:
+    client = _FakeClient(response=SimpleNamespace(output_text='{"assistantMessage":"ok","board":null}'))
+    service = OpenAIService(client=client, model="openai/GPT-5.3-Codex")
+
+    output = service.chat_with_board(
+        board={"version": 1, "columns": [], "cards": {}},
+        user_prompt="Summarize next step",
+        history=[{"role": "user", "content": "hello"}],
+        response_schema={"type": "object"},
+    )
+
+    assert output == '{"assistantMessage":"ok","board":null}'
+    assert client.request is not None
+    assert client.request["model"] == "openai/GPT-5.3-Codex"
+    assert "Summarize next step" in client.request["input"]
+    assert '"history": [{"role": "user", "content": "hello"}]' in client.request["input"]
+    assert '"response_schema"' not in client.request["input"]

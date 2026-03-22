@@ -197,20 +197,20 @@
 
 ### Checklist
 
-- [ ] Define strict structured output schema for assistant reply and optional board update.
-- [ ] Send board JSON, user prompt, and persisted chat history in each AI request.
-- [ ] Parse/validate structured output on backend.
-- [ ] Apply valid board updates transactionally and persist changes.
-- [ ] Persist chat history entries for both user and assistant.
+- [x] Define strict structured output schema for assistant reply and optional board update.
+- [x] Send board JSON, user prompt, and persisted chat history in each AI request.
+- [x] Parse/validate structured output on backend.
+- [x] Apply valid board updates transactionally and persist changes.
+- [x] Persist chat history entries for both user and assistant.
 
 ### Tests
 
-- [ ] Unit tests for schema validation and operation application logic.
-- [ ] Integration test: valid AI response with no board changes.
-- [ ] Integration test: valid AI response with board changes.
-- [ ] Integration test: malformed AI response is handled safely.
-- [ ] Regression tests for history persistence across requests/restarts.
-- [ ] Maintain >= 80% backend unit coverage.
+- [x] Unit tests for schema validation and operation application logic.
+- [x] Integration test: valid AI response with no board changes.
+- [x] Integration test: valid AI response with board changes.
+- [x] Integration test: malformed AI response is handled safely.
+- [x] Regression tests for history persistence across requests/restarts.
+- [x] Maintain >= 80% backend unit coverage.
 
 ### Success Criteria
 

@@ -11,6 +11,7 @@
 - Sign in credentials: `user` / `password`.
 - Board API (auth required): `GET /api/board`, `PUT /api/board`.
 - AI connectivity API (auth required): `POST /api/ai/connectivity` (uses `OPENAI_API_KEY` and model `openai/GPT-5.3-Codex`).
+- AI chat API (auth required): `POST /api/ai/chat` (structured response with optional board update).
 
 To stop and remove the container:
 
