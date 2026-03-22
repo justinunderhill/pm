@@ -174,3 +174,7 @@ cython_debug/
 
 .DS_Store
 
+# Project runtime artifacts
+backend/data/
+frontend/test-results/
+

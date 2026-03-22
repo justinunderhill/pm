@@ -7,10 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "vitest run",
-    "test:unit": "vitest run",
+    "test": "vitest run --coverage",
+    "test:unit": "vitest run --coverage",
     "test:unit:watch": "vitest",
-    "test:e2e": "playwright test",
+    "test:e2e": "npm run build && playwright test",
     "test:all": "npm run test:unit && npm run test:e2e"
   },
   "dependencies": {

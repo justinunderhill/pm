@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Project Management MVP</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        background: #f3f7fc;
+        color: #032147;
+      }
+
+      main {
+        width: min(680px, 90vw);
+        background: #ffffff;
+        border: 1px solid rgba(3, 33, 71, 0.12);
+        border-radius: 16px;
+        padding: 2rem;
+        box-shadow: 0 20px 40px rgba(3, 33, 71, 0.08);
+      }
+
+      h1 {
+        margin-top: 0;
+      }
+
+      pre {
+        background: #f7f9fd;
+        border-radius: 10px;
+        padding: 0.75rem;
+        overflow: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Hello from Project Management MVP</h1>
+      <p>This is the backend-served placeholder page for Part 2.</p>
+      <p>API check (`GET /api/health`):</p>
+      <pre id="health-output">Loading...</pre>
+    </main>
+
+    <script>
+      const output = document.getElementById("health-output");
+
+      fetch("/api/health")
+        .then((response) => response.json())
+        .then((data) => {
+          output.textContent = JSON.stringify(data, null, 2);
+        })
+        .catch((error) => {
+          output.textContent = `Request failed: ${error.message}`;
+        });
+    </script>
+  </body>
+</html>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -15,9 +15,31 @@ import { KanbanColumn } from "@/components/KanbanColumn";
 import { KanbanCardPreview } from "@/components/KanbanCardPreview";
 import { createId, initialData, moveCard, type BoardData } from "@/lib/kanban";
 
-export const KanbanBoard = () => {
-  const [board, setBoard] = useState<BoardData>(() => initialData);
+type KanbanBoardProps = {
+  onLogout?: () => void;
+  initialBoard?: BoardData;
+  onBoardUpdated?: (board: BoardData) => void;
+};
+
+export const KanbanBoard = ({
+  onLogout,
+  initialBoard,
+  onBoardUpdated,
+}: KanbanBoardProps = {}) => {
+  const [board, setBoard] = useState<BoardData>(() => initialBoard ?? initialData);
   const [activeCardId, setActiveCardId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (initialBoard) {
+      setBoard(initialBoard);
+    }
+  }, [initialBoard]);
+
+  useEffect(() => {
+    if (onBoardUpdated) {
+      onBoardUpdated(board);
+    }
+  }, [board, onBoardUpdated]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -89,6 +111,20 @@ export const KanbanBoard = () => {
     });
   };
 
+  const handleEditCard = (cardId: string, title: string, details: string) => {
+    setBoard((prev) => ({
+      ...prev,
+      cards: {
+        ...prev.cards,
+        [cardId]: {
+          ...prev.cards[cardId],
+          title,
+          details,
+        },
+      },
+    }));
+  };
+
   const activeCard = activeCardId ? cardsById[activeCardId] : null;
 
   return (
@@ -118,6 +154,15 @@ export const KanbanBoard = () => {
               <p className="mt-2 text-lg font-semibold text-[var(--primary-blue)]">
                 One board. Five columns. Zero clutter.
               </p>
+              {onLogout ? (
+                <button
+                  type="button"
+                  onClick={onLogout}
+                  className="mt-4 rounded-full bg-[var(--secondary-purple)] px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:brightness-110"
+                >
+                  Log out
+                </button>
+              ) : null}
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-4">
@@ -148,6 +193,7 @@ export const KanbanBoard = () => {
                 onRename={handleRenameColumn}
                 onAddCard={handleAddCard}
                 onDeleteCard={handleDeleteCard}
+                onEditCard={handleEditCard}
               />
             ))}
           </section>

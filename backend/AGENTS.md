@@ -1,1 +1,23 @@
-This file should be updated with a description of the Backend
+## Backend Overview
+
+- Runtime: FastAPI app served by `uvicorn`.
+- Entrypoint: `backend/app/main.py`.
+- Routes:
+- `/` serves static frontend files via `StaticFiles` (prefers `backend/frontend_dist`, then local `frontend/out`, then fallback static page).
+- `/api/health` returns a basic JSON health response.
+- `/api/auth/session`, `/api/auth/login`, `/api/auth/logout` implement MVP session auth.
+- `/api/auth/me` is a protected route used to verify route protection.
+- `/api/board` (`GET`, `PUT`) provides authenticated board load/save with payload validation.
+- `/api/ai/connectivity` (`POST`) provides an authenticated OpenAI connectivity check.
+- SQLite data layer:
+- `backend/app/database.py` handles schema initialization, seeding, and board persistence.
+- `backend/app/board_seed.py` provides default board seed JSON.
+- `backend/app/ai.py` handles OpenAI client wiring and connectivity calls.
+- Dependency/project config: `backend/pyproject.toml` with lockfile `backend/uv.lock`.
+- Unit/integration tests:
+- `backend/tests/test_app.py`
+- `backend/tests/test_auth.py`
+- `backend/tests/test_database.py`
+- `backend/tests/test_board_api.py`
+- `backend/tests/test_ai.py`
+- `backend/tests/test_ai_api.py`
