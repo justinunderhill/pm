@@ -79,3 +79,18 @@ Notes:
 - Backend validates any returned board using the same rules as `PUT /api/board`.
 - If AI output is malformed or board validation fails, backend returns `502`.
 - On success, user/assistant chat messages are persisted, and board updates (if present) are saved in the same DB transaction.
+
+### `GET /api/ai/history`
+
+Purpose: load persisted chat history for the authenticated user.
+
+Response `200`:
+
+```json
+{
+  "messages": [
+    { "role": "user", "content": "Move card-2 to review." },
+    { "role": "assistant", "content": "Done. I moved it to Review." }
+  ]
+}
+```

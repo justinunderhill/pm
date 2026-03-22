@@ -10,6 +10,7 @@
 - `/api/board` (`GET`, `PUT`) provides authenticated board load/save with payload validation.
 - `/api/ai/connectivity` (`POST`) provides an authenticated OpenAI connectivity check.
 - `/api/ai/chat` (`POST`) provides authenticated structured AI responses with optional board updates.
+- `/api/ai/history` (`GET`) returns authenticated persisted chat history for sidebar rendering.
 - SQLite data layer:
 - `backend/app/database.py` handles schema initialization, board persistence, and chat history persistence.
 - `backend/app/board_seed.py` provides default board seed JSON.

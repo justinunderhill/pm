@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
+import { AISidebar, type AIChatMessage } from "@/components/AISidebar";
 import { KanbanBoard } from "@/components/KanbanBoard";
 import type { BoardData } from "@/lib/kanban";
 
@@ -11,13 +12,27 @@ type SessionResponse = {
 
 type AuthState = "loading" | "authenticated" | "unauthenticated";
 
+type AIHistoryResponse = {
+  messages: AIChatMessage[];
+};
+
+type AIChatResponse = {
+  assistantMessage: string;
+  boardUpdated: boolean;
+  board: BoardData | null;
+};
+
 export const AppShell = () => {
   const [authState, setAuthState] = useState<AuthState>("loading");
   const [board, setBoard] = useState<BoardData | null>(null);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [chatErrorMessage, setChatErrorMessage] = useState("");
+  const [chatMessages, setChatMessages] = useState<AIChatMessage[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isChatSubmitting, setIsChatSubmitting] = useState(false);
+  const [isChatHistoryLoading, setIsChatHistoryLoading] = useState(false);
   const saveTimeoutId = useRef<number | null>(null);
   const lastPersistedBoardJson = useRef<string | null>(null);
   const queuedBoardJson = useRef<string | null>(null);
@@ -42,6 +57,18 @@ export const AppShell = () => {
       queuedBoardJson.current = null;
     }
     return true;
+  }, []);
+
+  const syncBoardFromServer = useCallback((nextBoard: BoardData) => {
+    if (saveTimeoutId.current) {
+      window.clearTimeout(saveTimeoutId.current);
+      saveTimeoutId.current = null;
+    }
+
+    const boardJson = JSON.stringify(nextBoard);
+    lastPersistedBoardJson.current = boardJson;
+    queuedBoardJson.current = null;
+    setBoard(nextBoard);
   }, []);
 
   useEffect(() => {
@@ -83,6 +110,7 @@ export const AppShell = () => {
       }
 
       setPassword("");
+      setChatMessages([]);
       setAuthState("authenticated");
     } catch {
       setErrorMessage("Unable to sign in right now.");
@@ -93,6 +121,7 @@ export const AppShell = () => {
 
   const handleLogout = async () => {
     setErrorMessage("");
+    setChatErrorMessage("");
     if (saveTimeoutId.current) {
       window.clearTimeout(saveTimeoutId.current);
       saveTimeoutId.current = null;
@@ -117,6 +146,7 @@ export const AppShell = () => {
     });
 
     setBoard(null);
+    setChatMessages([]);
     queuedBoardJson.current = null;
     lastPersistedBoardJson.current = null;
     setAuthState("unauthenticated");
@@ -127,30 +157,44 @@ export const AppShell = () => {
       return;
     }
 
-    const loadBoard = async () => {
+    const loadBoardAndHistory = async () => {
+      setErrorMessage("");
+      setChatErrorMessage("");
+      setIsChatHistoryLoading(true);
       try {
-        const response = await fetch("/api/board", {
+        const boardResponse = await fetch("/api/board", {
           credentials: "include",
         });
-        if (!response.ok) {
+        if (!boardResponse.ok) {
           throw new Error("Unable to load board.");
         }
-        const nextBoard = (await response.json()) as BoardData;
-        if (saveTimeoutId.current) {
-          window.clearTimeout(saveTimeoutId.current);
-          saveTimeoutId.current = null;
+
+        const nextBoard = (await boardResponse.json()) as BoardData;
+        syncBoardFromServer(nextBoard);
+
+        try {
+          const historyResponse = await fetch("/api/ai/history", {
+            credentials: "include",
+          });
+          if (!historyResponse.ok) {
+            throw new Error("Unable to load chat history.");
+          }
+          const historyData = (await historyResponse.json()) as AIHistoryResponse;
+          setChatMessages(historyData.messages);
+        } catch {
+          setChatErrorMessage("Unable to load chat history right now.");
+          setChatMessages([]);
         }
-        lastPersistedBoardJson.current = JSON.stringify(nextBoard);
-        queuedBoardJson.current = null;
-        setBoard(nextBoard);
       } catch {
         setErrorMessage("Unable to load board right now.");
         setAuthState("unauthenticated");
+      } finally {
+        setIsChatHistoryLoading(false);
       }
     };
 
-    void loadBoard();
-  }, [authState]);
+    void loadBoardAndHistory();
+  }, [authState, syncBoardFromServer]);
 
   useEffect(() => {
     return () => {
@@ -190,6 +234,65 @@ export const AppShell = () => {
     [authState, persistBoardJson]
   );
 
+  const handleSendMessage = useCallback(
+    async (message: string) => {
+      if (authState !== "authenticated") {
+        return;
+      }
+
+      setChatErrorMessage("");
+      setIsChatSubmitting(true);
+      try {
+        const response = await fetch("/api/ai/chat", {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ message }),
+        });
+
+        let responseBody: unknown = null;
+        try {
+          responseBody = await response.json();
+        } catch {
+          responseBody = null;
+        }
+
+        if (!response.ok) {
+          const detail =
+            typeof responseBody === "object" &&
+            responseBody !== null &&
+            "detail" in responseBody &&
+            typeof responseBody.detail === "string"
+              ? responseBody.detail
+              : "Unable to send message right now.";
+          throw new Error(detail);
+        }
+
+        const data = responseBody as AIChatResponse;
+        setChatMessages((prev) => [
+          ...prev,
+          { role: "user", content: message },
+          { role: "assistant", content: data.assistantMessage },
+        ]);
+
+        if (data.boardUpdated && data.board) {
+          syncBoardFromServer(data.board);
+        }
+      } catch (error) {
+        if (error instanceof Error && error.message) {
+          setChatErrorMessage(error.message);
+        } else {
+          setChatErrorMessage("Unable to send message right now.");
+        }
+      } finally {
+        setIsChatSubmitting(false);
+      }
+    },
+    [authState, syncBoardFromServer]
+  );
+
   if (authState === "loading") {
     return (
       <main className="mx-auto flex min-h-screen w-full max-w-lg items-center justify-center px-6 text-center text-sm font-semibold uppercase tracking-[0.2em] text-[var(--gray-text)]">
@@ -218,6 +321,15 @@ export const AppShell = () => {
           onLogout={handleLogout}
           initialBoard={board}
           onBoardUpdated={handleBoardUpdated}
+          rightSidebar={
+            <AISidebar
+              messages={chatMessages}
+              isLoading={isChatHistoryLoading}
+              isSubmitting={isChatSubmitting}
+              errorMessage={chatErrorMessage}
+              onSendMessage={handleSendMessage}
+            />
+          }
         />
       </>
     );

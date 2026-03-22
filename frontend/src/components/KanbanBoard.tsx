@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { ReactNode, useEffect, useMemo, useState } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -19,12 +19,14 @@ type KanbanBoardProps = {
   onLogout?: () => void;
   initialBoard?: BoardData;
   onBoardUpdated?: (board: BoardData) => void;
+  rightSidebar?: ReactNode;
 };
 
 export const KanbanBoard = ({
   onLogout,
   initialBoard,
   onBoardUpdated,
+  rightSidebar,
 }: KanbanBoardProps = {}) => {
   const [board, setBoard] = useState<BoardData>(() => initialBoard ?? initialData);
   const [activeCardId, setActiveCardId] = useState<string | null>(null);
@@ -178,33 +180,37 @@ export const KanbanBoard = ({
           </div>
         </header>
 
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCorners}
-          onDragStart={handleDragStart}
-          onDragEnd={handleDragEnd}
-        >
-          <section className="grid gap-6 lg:grid-cols-5">
-            {board.columns.map((column) => (
-              <KanbanColumn
-                key={column.id}
-                column={column}
-                cards={column.cardIds.map((cardId) => board.cards[cardId])}
-                onRename={handleRenameColumn}
-                onAddCard={handleAddCard}
-                onDeleteCard={handleDeleteCard}
-                onEditCard={handleEditCard}
-              />
-            ))}
-          </section>
-          <DragOverlay>
-            {activeCard ? (
-              <div className="w-[260px]">
-                <KanbanCardPreview card={activeCard} />
-              </div>
-            ) : null}
-          </DragOverlay>
-        </DndContext>
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px] xl:items-start">
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCorners}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+          >
+            <section className="grid gap-6 md:grid-cols-2 xl:grid-cols-5">
+              {board.columns.map((column) => (
+                <KanbanColumn
+                  key={column.id}
+                  column={column}
+                  cards={column.cardIds.map((cardId) => board.cards[cardId])}
+                  onRename={handleRenameColumn}
+                  onAddCard={handleAddCard}
+                  onDeleteCard={handleDeleteCard}
+                  onEditCard={handleEditCard}
+                />
+              ))}
+            </section>
+            <DragOverlay>
+              {activeCard ? (
+                <div className="w-[260px]">
+                  <KanbanCardPreview card={activeCard} />
+                </div>
+              ) : null}
+            </DragOverlay>
+          </DndContext>
+
+          {rightSidebar ? <div className="xl:sticky xl:top-8">{rightSidebar}</div> : null}
+        </div>
       </main>
     </div>
   );

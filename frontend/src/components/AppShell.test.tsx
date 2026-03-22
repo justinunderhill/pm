@@ -49,7 +49,8 @@ describe("AppShell", () => {
         jsonResponse(200, { authenticated: false, username: null })
       )
       .mockResolvedValueOnce(jsonResponse(200, { username: "user" }))
-      .mockResolvedValueOnce(jsonResponse(200, boardFixture()));
+      .mockResolvedValueOnce(jsonResponse(200, boardFixture()))
+      .mockResolvedValueOnce(jsonResponse(200, { messages: [] }));
 
     render(<AppShell />);
 
@@ -89,6 +90,7 @@ describe("AppShell", () => {
         jsonResponse(200, { authenticated: true, username: "user" })
       )
       .mockResolvedValueOnce(jsonResponse(200, boardFixture()))
+      .mockResolvedValueOnce(jsonResponse(200, { messages: [] }))
       .mockResolvedValueOnce(jsonResponse(200, { ok: true }));
 
     render(<AppShell />);
@@ -121,6 +123,7 @@ describe("AppShell", () => {
         jsonResponse(200, { authenticated: true, username: "user" })
       )
       .mockResolvedValueOnce(jsonResponse(200, boardFixture()))
+      .mockResolvedValueOnce(jsonResponse(200, { messages: [] }))
       .mockResolvedValueOnce(jsonResponse(500, { detail: "boom" }));
 
     render(<AppShell />);
@@ -134,5 +137,45 @@ describe("AppShell", () => {
         screen.getByText(/unable to save board changes\./i)
       ).toBeInTheDocument();
     });
+  });
+
+  it("sends a chat message and refreshes board from AI update", async () => {
+    const fetchMock = vi.mocked(fetch);
+    const updatedBoard = boardFixture();
+    updatedBoard.columns[0].title = "AI Prioritized";
+
+    fetchMock
+      .mockResolvedValueOnce(
+        jsonResponse(200, { authenticated: true, username: "user" })
+      )
+      .mockResolvedValueOnce(jsonResponse(200, boardFixture()))
+      .mockResolvedValueOnce(
+        jsonResponse(200, {
+          messages: [{ role: "assistant", content: "Welcome back." }],
+        })
+      )
+      .mockResolvedValueOnce(
+        jsonResponse(200, {
+          assistantMessage: "I reprioritized your backlog.",
+          boardUpdated: true,
+          board: updatedBoard,
+        })
+      );
+
+    render(<AppShell />);
+
+    expect(
+      await screen.findByText("Welcome back.")
+    ).toBeVisible();
+
+    await userEvent.type(screen.getByLabelText("Message AI"), "Prioritize board");
+    await userEvent.click(screen.getByRole("button", { name: /^send$/i }));
+
+    expect(
+      await screen.findByText("I reprioritized your backlog.")
+    ).toBeVisible();
+    expect(screen.getAllByLabelText(/column title/i)[0]).toHaveValue(
+      "AI Prioritized"
+    );
   });
 });

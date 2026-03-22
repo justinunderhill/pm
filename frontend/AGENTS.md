@@ -1,65 +1,51 @@
 # Frontend Overview
 
-## Purpose
-
-This `frontend/` project is a standalone NextJS Kanban demo used as the starting point for the full MVP. It currently runs fully on the client with in-memory state and no backend integration.
-
 ## Stack
 
 - NextJS App Router (`next@16`)
 - React 19 + TypeScript
 - Tailwind CSS v4
-- Drag and drop: `@dnd-kit/core`, `@dnd-kit/sortable`, `@dnd-kit/utilities`
-- Unit testing: Vitest + Testing Library
-- E2E testing: Playwright
-- Static export mode: `next.config.ts` uses `output: "export"` so builds emit `frontend/out`.
+- Drag/drop: `@dnd-kit/core`, `@dnd-kit/sortable`, `@dnd-kit/utilities`
+- Unit tests: Vitest + Testing Library
+- E2E tests: Playwright
 
 ## Current App Behavior
 
-- Entry route `/` renders auth-gated `AppShell`.
+- Entry route `/` renders `AppShell`.
 - Unauthenticated users see login form.
 - Demo credentials: `user` / `password`.
-- Authenticated users see the Kanban board and can log out.
-- Board has 5 columns by default.
-- Column titles are editable inline.
-- Cards can be added and removed.
-- Cards can be reordered within a column and moved across columns with drag/drop.
-- Data is seeded from `src/lib/kanban.ts` and stored in React component state only (not persistent).
+- Authenticated users see:
+  - full Kanban board (backend-backed persistence via `GET/PUT /api/board`)
+  - AI sidebar chat (`POST /api/ai/chat`, `GET /api/ai/history`)
+  - logout action
+- Board interactions supported:
+  - rename columns
+  - add/edit/delete cards
+  - drag/drop move cards
+- Board saves use optimistic local updates + debounced autosave.
+- AI responses can optionally return a board update; UI applies it immediately.
 
 ## Key Files
 
-- `src/app/page.tsx`: app entry route, renders board.
-- `src/components/AppShell.tsx`: auth gating and login/logout flow.
-- `src/components/KanbanBoard.tsx`: top-level board state and drag/drop orchestration.
+- `src/components/AppShell.tsx`: auth flow, board load/save orchestration, AI history load, AI send/receive flow.
+- `src/components/KanbanBoard.tsx`: board UI, drag/drop orchestration, responsive board + sidebar layout.
+- `src/components/AISidebar.tsx`: AI chat sidebar UI and message form.
 - `src/components/KanbanColumn.tsx`: column rendering, rename input, card list, add-card form.
-- `src/components/KanbanCard.tsx`: sortable card rendering + delete action.
-- `src/components/NewCardForm.tsx`: add-card UI and form state.
-- `src/lib/kanban.ts`: board types, initial seed data, card move utility, id generator.
-- `src/app/globals.css`: color tokens and base styles aligned with project palette.
+- `src/components/KanbanCard.tsx`: card rendering, inline edit, delete action.
+- `src/lib/kanban.ts`: board types, initial data, move utility, id generation.
 
-## Test Setup
+## Tests
 
-- `src/lib/kanban.test.ts` covers core `moveCard` behavior.
-- `src/components/KanbanBoard.test.tsx` covers render/rename/add/remove behaviors.
-- `src/components/AppShell.test.tsx` covers session check, login success/failure, and logout.
-- `tests/kanban.spec.ts` covers page load, add-card flow, and drag/drop between columns.
-- Vitest config: `vitest.config.ts` with `jsdom` environment and coverage reporter enabled.
-- Playwright config: `playwright.config.ts` runs against backend server at `127.0.0.1:8000`.
+- `src/components/AppShell.test.tsx`: auth gating, board API behavior, AI chat flow and board refresh.
+- `src/components/AISidebar.test.tsx`: sidebar interactions and message rendering.
+- `src/components/KanbanBoard.test.tsx`: board interactions.
+- `src/lib/kanban.test.ts`: move utility behavior.
+- `tests/kanban.spec.ts`: end-to-end auth + board + AI sidebar flows against backend.
 
 ## Commands
 
 - Install: `npm install`
-- Dev server: `npm run dev`
 - Build: `npm run build`
-- Start: `npm run start`
 - Unit tests: `npm run test:unit`
 - E2E tests: `npm run test:e2e`
-- All tests: `npm run test:all`
-
-## Known Gaps (Expected for Current Stage)
-
-- No real user system beyond hardcoded demo credentials.
-- No board persistence API usage yet (board is still local client state).
-- No persistence.
-- No AI sidebar/chat.
-- No server-side data model alignment yet (board data is still client-side state).
+- Full frontend suite: `npm run test:all`

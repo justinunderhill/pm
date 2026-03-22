@@ -159,9 +159,9 @@ test("deletes a card and persists after refresh", async ({ page }) => {
   const saveResponse = waitForBoardSave(page);
   await targetCard
     .getByRole("button", { name: /delete gather customer signals/i })
-    .click();
-  await saveResponse;
+    .evaluate((button) => (button as HTMLButtonElement).click());
   await expect(firstColumn.getByTestId("card-card-2")).toHaveCount(0);
+  await saveResponse;
 
   await page.reload();
   await expect(page.locator('[data-testid="card-card-2"]')).toHaveCount(0);
@@ -183,14 +183,52 @@ test("rejects invalid credentials and supports logout", async ({ page }) => {
 
 test("persists board changes across logout and login", async ({ page }) => {
   await signIn(page);
-  const firstColumnTitleInput = page.getByLabel("Column title").first();
+  const firstColumn = page.locator('[data-testid^="column-"]').first();
   const saveResponse = waitForBoardSave(page);
-  await firstColumnTitleInput.clear();
-  await firstColumnTitleInput.fill("Persisted Backlog");
-  await page.getByRole("button", { name: /log out/i }).click();
+  await firstColumn.getByRole("button", { name: /add a card/i }).click();
+  await firstColumn.getByPlaceholder("Card title").fill("Persisted logout card");
+  await firstColumn.getByPlaceholder("Details").fill("Should survive relogin.");
+  await firstColumn.getByRole("button", { name: /add card/i }).click();
   await saveResponse;
+  await page.getByRole("button", { name: /log out/i }).click();
   await expect(page.getByRole("heading", { name: /sign in/i })).toBeVisible();
 
   await signIn(page, { resetBoard: false });
-  await expect(page.getByLabel("Column title").first()).toHaveValue("Persisted Backlog");
+  await expect(page.getByText("Persisted logout card")).toBeVisible();
+});
+
+test("sends AI message and refreshes board when AI returns updates", async ({
+  page,
+}) => {
+  await page.route("**/api/ai/history", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+
+  await page.route("**/api/ai/chat", async (route) => {
+    const updatedBoard = JSON.parse(JSON.stringify(defaultBoard));
+    updatedBoard.columns[0].title = "AI Prioritized";
+
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        assistantMessage: "Done. I prioritized the first column.",
+        boardUpdated: true,
+        board: updatedBoard,
+      }),
+    });
+  });
+
+  await signIn(page);
+  await page.getByLabel("Message AI").fill("Prioritize this board.");
+  await page.getByRole("button", { name: /^send$/i }).click();
+
+  await expect(
+    page.getByText("Done. I prioritized the first column.")
+  ).toBeVisible();
+  await expect(page.getByLabel("Column title").first()).toHaveValue("AI Prioritized");
 });

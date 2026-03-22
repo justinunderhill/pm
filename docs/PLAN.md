@@ -221,18 +221,18 @@
 
 ### Checklist
 
-- [ ] Add sidebar chat UI to board page.
-- [ ] Implement message send/receive flow with backend AI endpoint.
-- [ ] Render conversation history in sidebar.
-- [ ] Refresh board UI automatically when AI update is returned.
-- [ ] Keep layout responsive on desktop and mobile.
+- [x] Add sidebar chat UI to board page.
+- [x] Implement message send/receive flow with backend AI endpoint.
+- [x] Render conversation history in sidebar.
+- [x] Refresh board UI automatically when AI update is returned.
+- [x] Keep layout responsive on desktop and mobile.
 
 ### Tests
 
-- [ ] Frontend unit tests for chat widget rendering and interactions.
-- [ ] Integration tests for message flow and board refresh behavior.
-- [ ] E2E tests for complete flow: user asks AI -> assistant responds -> board updates in UI when applicable.
-- [ ] Maintain >= 80% frontend unit coverage.
+- [x] Frontend unit tests for chat widget rendering and interactions.
+- [x] Integration tests for message flow and board refresh behavior.
+- [x] E2E tests for complete flow: user asks AI -> assistant responds -> board updates in UI when applicable.
+- [x] Maintain >= 80% frontend unit coverage.
 
 ### Success Criteria
 

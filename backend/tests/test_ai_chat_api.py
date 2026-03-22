@@ -23,6 +23,13 @@ def test_ai_chat_requires_authentication(client: TestClient) -> None:
     assert response.json()["detail"] == "Authentication required."
 
 
+def test_ai_history_requires_authentication(client: TestClient) -> None:
+    response = client.get("/api/ai/history")
+
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Authentication required."
+
+
 def test_ai_chat_accepts_valid_response_without_board_update(
     client: TestClient,
     db_path: Path,
@@ -59,6 +66,10 @@ def test_ai_chat_accepts_valid_response_without_board_update(
         {"role": "user", "content": "What should I do next?"},
         {"role": "assistant", "content": "No changes required."},
     ]
+
+    history_response = client.get("/api/ai/history")
+    assert history_response.status_code == 200
+    assert history_response.json() == {"messages": history}
 
 
 def test_ai_chat_applies_valid_board_update(client: TestClient, db_path: Path, monkeypatch) -> None:

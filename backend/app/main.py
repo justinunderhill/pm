@@ -77,6 +77,11 @@ class AIChatStructuredResponse(BaseModel):
     board: BoardPayload | None = None
 
 
+class AIChatMessagePayload(BaseModel):
+    role: str
+    content: str
+
+
 SESSION_STORE: dict[str, SessionRecord] = {}
 
 
@@ -308,6 +313,13 @@ def create_app(frontend_dir: Path | None = None, db_path: Path | None = None) ->
             "boardUpdated": board_update is not None,
             "board": persisted_board if board_update is not None else None,
         }
+
+    @app.get("/api/ai/history")
+    def ai_history(
+        username: str = Depends(require_authenticated_user),
+    ) -> dict[str, list[AIChatMessagePayload]]:
+        history = get_chat_history_for_user(app.state.db_path, username)
+        return {"messages": [AIChatMessagePayload(**entry) for entry in history]}
 
     app.mount(
         "/",

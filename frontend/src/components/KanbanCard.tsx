@@ -1,7 +1,7 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import clsx from "clsx";
-import { useEffect, useState } from "react";
+import { SyntheticEvent, useEffect, useState } from "react";
 import type { Card } from "@/lib/kanban";
 
 type KanbanCardProps = {
@@ -47,6 +47,9 @@ export const KanbanCard = ({ card, onDelete, onEdit }: KanbanCardProps) => {
 
   const dragAttributes = isEditing ? {} : attributes;
   const dragListeners = isEditing ? {} : listeners;
+  const stopDragPropagation = (event: SyntheticEvent) => {
+    event.stopPropagation();
+  };
 
   return (
     <article
@@ -68,12 +71,16 @@ export const KanbanCard = ({ card, onDelete, onEdit }: KanbanCardProps) => {
               <input
                 value={draftTitle}
                 onChange={(event) => setDraftTitle(event.target.value)}
+                onPointerDown={stopDragPropagation}
+                onMouseDown={stopDragPropagation}
                 aria-label="Card title"
                 className="w-full rounded-lg border border-[var(--stroke)] bg-white px-2 py-1 text-sm font-semibold text-[var(--navy-dark)] outline-none transition focus:border-[var(--primary-blue)]"
               />
               <textarea
                 value={draftDetails}
                 onChange={(event) => setDraftDetails(event.target.value)}
+                onPointerDown={stopDragPropagation}
+                onMouseDown={stopDragPropagation}
                 aria-label="Card details"
                 rows={3}
                 className="w-full resize-none rounded-lg border border-[var(--stroke)] bg-white px-2 py-1 text-sm text-[var(--gray-text)] outline-none transition focus:border-[var(--primary-blue)]"
@@ -96,6 +103,8 @@ export const KanbanCard = ({ card, onDelete, onEdit }: KanbanCardProps) => {
               <button
                 type="button"
                 onClick={handleSave}
+                onPointerDown={stopDragPropagation}
+                onMouseDown={stopDragPropagation}
                 className="rounded-full border border-transparent px-2 py-1 text-xs font-semibold text-[var(--primary-blue)] transition hover:border-[var(--stroke)]"
               >
                 Save
@@ -103,6 +112,8 @@ export const KanbanCard = ({ card, onDelete, onEdit }: KanbanCardProps) => {
               <button
                 type="button"
                 onClick={handleCancel}
+                onPointerDown={stopDragPropagation}
+                onMouseDown={stopDragPropagation}
                 className="rounded-full border border-transparent px-2 py-1 text-xs font-semibold text-[var(--gray-text)] transition hover:border-[var(--stroke)] hover:text-[var(--navy-dark)]"
               >
                 Cancel
@@ -113,6 +124,8 @@ export const KanbanCard = ({ card, onDelete, onEdit }: KanbanCardProps) => {
               <button
                 type="button"
                 onClick={() => setIsEditing(true)}
+                onPointerDown={stopDragPropagation}
+                onMouseDown={stopDragPropagation}
                 className="rounded-full border border-transparent px-2 py-1 text-xs font-semibold text-[var(--primary-blue)] transition hover:border-[var(--stroke)]"
                 aria-label={`Edit ${card.title}`}
               >
@@ -121,6 +134,8 @@ export const KanbanCard = ({ card, onDelete, onEdit }: KanbanCardProps) => {
               <button
                 type="button"
                 onClick={() => onDelete(card.id)}
+                onPointerDown={stopDragPropagation}
+                onMouseDown={stopDragPropagation}
                 className="rounded-full border border-transparent px-2 py-1 text-xs font-semibold text-[var(--gray-text)] transition hover:border-[var(--stroke)] hover:text-[var(--navy-dark)]"
                 aria-label={`Delete ${card.title}`}
               >
