@@ -226,11 +226,11 @@ The Dockerfile `COPY` of `frontend/out` will silently succeed even if the build 
 | ~~Now~~ | ~~Investigate and confirm `KanbanBoardPreview` usage (5.4)~~ — confirmed used, no action |
 | Now | Add expired session test (1.3) |
 | Now | Fix React list key in AISidebar (2.4) |
-| Soon | Parallel board + history load with independent error handling (2.2) |
-| Soon | Add AI empty-board safety test (5.2) |
-| Soon | Add logout flush test (5.3) |
-| Soon | Add Docker HEALTHCHECK (7.1) |
-| Soon | Add Dockerfile frontend output guard (7.2) |
+| ~~Soon~~ | ~~Parallel board + history load with independent error handling (2.2)~~ — done |
+| ~~Soon~~ | ~~Add AI empty-board safety test (5.2)~~ — done |
+| ~~Soon~~ | ~~Add logout flush test (5.3)~~ — done |
+| ~~Soon~~ | ~~Add Docker HEALTHCHECK (7.1)~~ — done |
+| ~~Soon~~ | ~~Add Dockerfile frontend output guard (7.2)~~ — done |
 | Post-MVP | Persist sessions to DB (1.2) |
 | Post-MVP | Board save conflict detection with version field (2.1) |
 | Post-MVP | AI context sliding window (6.1) |

@@ -162,32 +162,27 @@ export const AppShell = () => {
       setChatErrorMessage("");
       setIsChatHistoryLoading(true);
       try {
-        const boardResponse = await fetch("/api/board", {
-          credentials: "include",
-        });
-        if (!boardResponse.ok) {
-          throw new Error("Unable to load board.");
+        const [boardResult, historyResult] = await Promise.allSettled([
+          fetch("/api/board", { credentials: "include" }),
+          fetch("/api/ai/history", { credentials: "include" }),
+        ]);
+
+        if (boardResult.status === "rejected" || !boardResult.value.ok) {
+          setErrorMessage("Unable to load board right now.");
+          setAuthState("unauthenticated");
+          return;
         }
 
-        const nextBoard = (await boardResponse.json()) as BoardData;
+        const nextBoard = (await boardResult.value.json()) as BoardData;
         syncBoardFromServer(nextBoard);
 
-        try {
-          const historyResponse = await fetch("/api/ai/history", {
-            credentials: "include",
-          });
-          if (!historyResponse.ok) {
-            throw new Error("Unable to load chat history.");
-          }
-          const historyData = (await historyResponse.json()) as AIHistoryResponse;
-          setChatMessages(historyData.messages);
-        } catch {
+        if (historyResult.status === "rejected" || !historyResult.value.ok) {
           setChatErrorMessage("Unable to load chat history right now.");
           setChatMessages([]);
+        } else {
+          const historyData = (await historyResult.value.json()) as AIHistoryResponse;
+          setChatMessages(historyData.messages);
         }
-      } catch {
-        setErrorMessage("Unable to load board right now.");
-        setAuthState("unauthenticated");
       } finally {
         setIsChatHistoryLoading(false);
       }

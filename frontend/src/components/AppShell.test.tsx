@@ -139,6 +139,32 @@ describe("AppShell", () => {
     });
   });
 
+  it("flushes pending board save before logging out", async () => {
+    const user = userEvent.setup({ delay: null });
+    const fetchMock = vi.mocked(fetch);
+    fetchMock
+      .mockResolvedValueOnce(
+        jsonResponse(200, { authenticated: true, username: "user" })
+      )
+      .mockResolvedValueOnce(jsonResponse(200, boardFixture()))
+      .mockResolvedValueOnce(jsonResponse(200, { messages: [] }))
+      .mockResolvedValueOnce(jsonResponse(200, boardFixture()))
+      .mockResolvedValueOnce(jsonResponse(200, { ok: true }));
+
+    render(<AppShell />);
+
+    const firstColumnInput = (await screen.findAllByLabelText(/column title/i))[0];
+    await user.clear(firstColumnInput);
+    await user.type(firstColumnInput, "Pending Change");
+
+    await user.click(screen.getByRole("button", { name: /log out/i }));
+
+    expect(await screen.findByRole("heading", { name: /sign in/i })).toBeVisible();
+    expect(fetchMock).toHaveBeenCalledTimes(5);
+    expect(fetchMock.mock.calls[3][1]).toMatchObject({ method: "PUT" });
+    expect(fetchMock.mock.calls[4][1]).toMatchObject({ method: "POST" });
+  });
+
   it("sends a chat message and refreshes board from AI update", async () => {
     const fetchMock = vi.mocked(fetch);
     const updatedBoard = boardFixture();

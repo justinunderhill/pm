@@ -22,6 +22,18 @@ def test_validate_ai_board_update_returns_none_when_not_present() -> None:
     assert _validate_ai_board_update(parsed) is None
 
 
+def test_validate_ai_board_update_accepts_empty_board() -> None:
+    parsed = _parse_ai_chat_response(
+        '{"assistantMessage":"Cleared the board","board":{"version":1,"columns":[],"cards":{}}}'
+    )
+
+    result = _validate_ai_board_update(parsed)
+
+    assert result is not None
+    assert result["columns"] == []
+    assert result["cards"] == {}
+
+
 def test_validate_ai_board_update_rejects_invalid_board_shape() -> None:
     parsed = _parse_ai_chat_response(
         """

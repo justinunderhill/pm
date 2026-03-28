@@ -24,7 +24,11 @@ RUN uv sync --project backend --frozen --no-dev
 
 COPY backend ./backend
 COPY --from=frontend-build /app/frontend/out ./backend/frontend_dist
+RUN test -f ./backend/frontend_dist/index.html
 
 EXPOSE 8000
+
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')" || exit 1
 
 CMD ["uv", "run", "--directory", "backend", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
