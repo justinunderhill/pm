@@ -2,6 +2,8 @@ from types import SimpleNamespace
 
 import pytest
 
+from openai import OpenAIError
+
 from app.ai import (
     OpenAIConfigurationError,
     OpenAIRequestError,
@@ -59,7 +61,7 @@ def test_connectivity_check_extracts_text_from_output_items() -> None:
 
 
 def test_connectivity_check_raises_for_api_errors() -> None:
-    service = OpenAIService(client=_FakeClient(error=RuntimeError("boom")))
+    service = OpenAIService(client=_FakeClient(error=OpenAIError("boom")))
 
     with pytest.raises(OpenAIRequestError, match="OpenAI request failed."):
         service.connectivity_check("2+2")

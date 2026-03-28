@@ -1,3 +1,6 @@
+import time
+
+import app.main as main_module
 from fastapi.testclient import TestClient
 
 
@@ -50,5 +53,16 @@ def test_logout_clears_session(client: TestClient) -> None:
 def test_protected_route_requires_authentication(client: TestClient) -> None:
     response = client.get("/api/auth/me")
 
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Authentication required."
+
+
+def test_expired_session_is_rejected(client: TestClient) -> None:
+    client.post("/api/auth/login", json={"username": "user", "password": "password"})
+
+    for record in main_module.SESSION_STORE.values():
+        record.expires_at = time.time() - 1
+
+    response = client.get("/api/auth/me")
     assert response.status_code == 401
     assert response.json()["detail"] == "Authentication required."

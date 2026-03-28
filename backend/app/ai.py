@@ -9,6 +9,7 @@ from openai import (
     AuthenticationError,
     BadRequestError,
     OpenAI,
+    OpenAIError,
     RateLimitError,
 )
 
@@ -77,7 +78,7 @@ class OpenAIService:
                 model=self.model,
                 input=prompt,
             )
-        except Exception as exc:  # pragma: no cover - details depend on SDK internals
+        except OpenAIError as exc:  # pragma: no cover - details depend on SDK internals
             raise OpenAIRequestError(_describe_openai_error(exc)) from exc
 
         text_output = _extract_output_text(response)
@@ -116,7 +117,7 @@ class OpenAIService:
                 model=self.model,
                 input=composed_input,
             )
-        except Exception as exc:  # pragma: no cover - details depend on SDK internals
+        except OpenAIError as exc:  # pragma: no cover - details depend on SDK internals
             raise OpenAIRequestError(_describe_openai_error(exc)) from exc
 
         text_output = _extract_output_text(response)

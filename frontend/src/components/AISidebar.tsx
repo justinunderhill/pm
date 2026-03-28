@@ -71,7 +71,7 @@ export const AISidebar = ({
         {!isLoading
           ? messages.map((message, index) => (
               <article
-                key={`${message.role}-${index}-${message.content.slice(0, 24)}`}
+                key={`${message.role}-${index}`}
                 className="rounded-2xl border border-[var(--stroke)] bg-white px-4 py-3"
                 data-testid={`ai-message-${index}`}
               >
