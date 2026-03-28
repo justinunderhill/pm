@@ -2,10 +2,18 @@ import os
 import json
 from typing import Any
 
-from openai import OpenAI
+from openai import (
+    APIConnectionError,
+    APIStatusError,
+    APITimeoutError,
+    AuthenticationError,
+    BadRequestError,
+    OpenAI,
+    RateLimitError,
+)
 
 
-DEFAULT_OPENAI_MODEL = "openai/GPT-5.3-Codex"
+DEFAULT_OPENAI_MODEL = "gpt-5.3-codex"
 DEFAULT_CONNECTIVITY_PROMPT = "2+2"
 
 
@@ -15,6 +23,20 @@ class OpenAIConfigurationError(RuntimeError):
 
 class OpenAIRequestError(RuntimeError):
     pass
+
+
+def _describe_openai_error(exc: Exception) -> str:
+    if isinstance(exc, AuthenticationError):
+        return "OpenAI authentication failed. Check OPENAI_API_KEY."
+    if isinstance(exc, RateLimitError):
+        return "OpenAI rate limit reached. Please retry shortly."
+    if isinstance(exc, (APIConnectionError, APITimeoutError)):
+        return "OpenAI network error. Check connectivity and retry."
+    if isinstance(exc, BadRequestError):
+        return "OpenAI request was rejected. Check model or payload format."
+    if isinstance(exc, APIStatusError):
+        return f"OpenAI API error (status {exc.status_code})."
+    return "OpenAI request failed."
 
 
 def _extract_output_text(response: Any) -> str:
@@ -56,7 +78,7 @@ class OpenAIService:
                 input=prompt,
             )
         except Exception as exc:  # pragma: no cover - details depend on SDK internals
-            raise OpenAIRequestError("OpenAI request failed.") from exc
+            raise OpenAIRequestError(_describe_openai_error(exc)) from exc
 
         text_output = _extract_output_text(response)
         if not text_output:
@@ -95,7 +117,7 @@ class OpenAIService:
                 input=composed_input,
             )
         except Exception as exc:  # pragma: no cover - details depend on SDK internals
-            raise OpenAIRequestError("OpenAI request failed.") from exc
+            raise OpenAIRequestError(_describe_openai_error(exc)) from exc
 
         text_output = _extract_output_text(response)
         if not text_output:

@@ -28,7 +28,7 @@ Response `200`:
 
 ```json
 {
-  "model": "openai/GPT-5.3-Codex",
+  "model": "gpt-5.3-codex",
   "output": "4"
 }
 ```

@@ -4,7 +4,7 @@
 
 - Tech stack: NextJS frontend, FastAPI backend, SQLite database, Docker single-container local runtime.
 - Python package manager in container: `uv`.
-- Model for AI calls: `openai/GPT-5.3-Codex`.
+- Model for AI calls: `gpt-5.3-codex`.
 - Auth approach: backend-enforced session auth with MVP credentials `user` / `password`.
 - Data shape approach: one board per user, board state stored as JSON in SQLite.
 - Board payload format includes a `version` field (currently `1`) to keep future schema changes straightforward.
@@ -177,7 +177,7 @@
 ### Checklist
 
 - [x] Add backend OpenAI client wiring using `OPENAI_API_KEY`.
-- [x] Configure model `openai/GPT-5.3-Codex`.
+- [x] Configure model `gpt-5.3-codex`.
 - [x] Add simple backend endpoint/service call for connectivity check.
 - [x] Implement clear error handling for missing key and API failures.
 

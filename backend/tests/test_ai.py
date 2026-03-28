@@ -32,12 +32,12 @@ def test_service_requires_api_key_without_injected_client(monkeypatch) -> None:
 
 def test_connectivity_check_uses_configured_model_and_prompt() -> None:
     client = _FakeClient(response=SimpleNamespace(output_text="4"))
-    service = OpenAIService(client=client, model="openai/GPT-5.3-Codex")
+    service = OpenAIService(client=client, model="gpt-5.3-codex")
 
     output = service.connectivity_check("2+2")
 
     assert output == "4"
-    assert client.request == {"model": "openai/GPT-5.3-Codex", "input": "2+2"}
+    assert client.request == {"model": "gpt-5.3-codex", "input": "2+2"}
 
 
 def test_connectivity_check_extracts_text_from_output_items() -> None:
@@ -74,7 +74,7 @@ def test_connectivity_check_raises_when_no_text_is_returned() -> None:
 
 def test_chat_with_board_sends_prompt_board_history_and_schema() -> None:
     client = _FakeClient(response=SimpleNamespace(output_text='{"assistantMessage":"ok","board":null}'))
-    service = OpenAIService(client=client, model="openai/GPT-5.3-Codex")
+    service = OpenAIService(client=client, model="gpt-5.3-codex")
 
     output = service.chat_with_board(
         board={"version": 1, "columns": [], "cards": {}},
@@ -85,7 +85,7 @@ def test_chat_with_board_sends_prompt_board_history_and_schema() -> None:
 
     assert output == '{"assistantMessage":"ok","board":null}'
     assert client.request is not None
-    assert client.request["model"] == "openai/GPT-5.3-Codex"
+    assert client.request["model"] == "gpt-5.3-codex"
     assert "Summarize next step" in client.request["input"]
     assert '"history": [{"role": "user", "content": "hello"}]' in client.request["input"]
     assert '"response_schema"' not in client.request["input"]

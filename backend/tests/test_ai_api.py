@@ -27,7 +27,7 @@ def test_ai_connectivity_returns_model_and_output(client: TestClient, monkeypatc
     seen: dict[str, str] = {}
 
     class _Service:
-        model = "openai/GPT-5.3-Codex"
+        model = "gpt-5.3-codex"
 
         def connectivity_check(self, prompt: str) -> str:
             seen["prompt"] = prompt
@@ -38,7 +38,7 @@ def test_ai_connectivity_returns_model_and_output(client: TestClient, monkeypatc
     response = client.post("/api/ai/connectivity", json={"prompt": "2+2"})
 
     assert response.status_code == 200
-    assert response.json() == {"model": "openai/GPT-5.3-Codex", "output": "4"}
+    assert response.json() == {"model": "gpt-5.3-codex", "output": "4"}
     assert seen["prompt"] == "2+2"
 
 
@@ -60,7 +60,7 @@ def test_ai_connectivity_reports_openai_failures(client: TestClient, monkeypatch
     _login(client)
 
     class _FailingService:
-        model = "openai/GPT-5.3-Codex"
+        model = "gpt-5.3-codex"
 
         def connectivity_check(self, _prompt: str) -> str:
             raise OpenAIRequestError("OpenAI request failed.")
@@ -82,5 +82,5 @@ def test_ai_connectivity_real_call_skips_without_api_key(client: TestClient) -> 
 
     assert response.status_code == 200
     body = response.json()
-    assert body["model"] == "openai/GPT-5.3-Codex"
+    assert body["model"] == "gpt-5.3-codex"
     assert "4" in body["output"]

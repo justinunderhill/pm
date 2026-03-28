@@ -10,7 +10,7 @@
 - The Docker build now compiles and exports the NextJS frontend and serves it from FastAPI at `/`.
 - Sign in credentials: `user` / `password`.
 - Board API (auth required): `GET /api/board`, `PUT /api/board`.
-- AI connectivity API (auth required): `POST /api/ai/connectivity` (uses `OPENAI_API_KEY` and model `openai/GPT-5.3-Codex`).
+- AI connectivity API (auth required): `POST /api/ai/connectivity` (uses `OPENAI_API_KEY` and model `gpt-5.3-codex`).
 - AI chat API (auth required): `POST /api/ai/chat` (structured response with optional board update).
 - AI history API (auth required): `GET /api/ai/history`.
 
